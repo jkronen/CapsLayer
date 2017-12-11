@@ -9,6 +9,9 @@ This library is based on [Tensorflow](https://www.tensorflow.org) and has a simi
 
 My updates are about the GTSRB Dataset
 
+run with python3
+python3 models/main.py --dataset gtsrb --logdir /tmp/log/caps --batch_size 6
+
 
 # Features
 
