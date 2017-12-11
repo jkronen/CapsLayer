@@ -123,8 +123,11 @@ def main(_):
         num_label = 10
         model = CapsNet(height=28, width=28, channels=1, num_label=10)
     elif cfg.dataset == 'smallNORB':
-        model = CapsNet(height=32, width=32, channaels=3, num_label=5)
+        model = CapsNet(height=32, width=32, channels=3, num_label=5)
         num_label = 5
+    elif cfg.dataset == 'gtsrb':
+        model = CapsNet(height=48, width=48, channels=3, num_label=43)
+        num_label = 43
     tf.logging.info(' Graph loaded')
 
     sv = tf.train.Supervisor(graph=model.graph, logdir=cfg.logdir, save_model_secs=0)

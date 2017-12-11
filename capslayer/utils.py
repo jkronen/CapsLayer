@@ -2,7 +2,9 @@ import os
 import scipy
 import numpy as np
 import tensorflow as tf
-
+import pickle
+from sklearn.utils import shuffle
+from sklearn.model_selection import train_test_split
 
 def reduce_sum(input_tensor, axis=None, keepdims=False, name=None):
     try:
@@ -99,6 +101,33 @@ def load_smallNORB(batch_size, is_training=True):
     pass
 
 
+def load_gtsrb(batch_size, is_training=True):
+    path = os.path.join('models', 'data', 'gtsrb')
+    if is_training:
+        fd = os.path.join(path, 'train48.p')
+        with open(fd, mode='rb') as f:
+            train = pickle.load(f)
+
+        X_train, y_train = train['features'], train['labels']
+        X_train, y_train = shuffle(X_train, y_train, random_state=42)
+
+        X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.1, random_state=42)
+
+        num_tr_batch = len(X_train) // batch_size
+        num_val_batch = len(X_val) // batch_size
+
+        return X_train.astype(np.float32), y_train, num_tr_batch, X_val.astype(np.float32), y_val, num_val_batch
+    else:
+        fd = os.path.join(path, 'test48.p')
+        with open(fd, mode='rb') as f:
+            test = pickle.load(f)
+
+        X_test, y_test = test['features'], test['labels']
+
+        num_te_batch = len(X_test) // batch_size
+        return X_test.astype(np.float32), y_test, num_te_batch
+
+
 def load_data(dataset, batch_size, is_training=True, one_hot=False):
     if dataset == 'mnist':
         return load_mnist(batch_size, is_training)
@@ -106,6 +135,8 @@ def load_data(dataset, batch_size, is_training=True, one_hot=False):
         return load_fashion_mnist(batch_size, is_training)
     elif dataset == 'smallNORB':
         return load_smallNORB(batch_size, is_training)
+    elif dataset == 'gtsrb':
+        return load_gtsrb(batch_size, is_training)
     else:
         raise Exception('Invalid dataset, please check the name of dataset:', dataset)
 
@@ -117,6 +148,8 @@ def get_batch_data(dataset, batch_size, num_threads):
         trX, trY, num_tr_batch, valX, valY, num_val_batch = load_fashion_mnist(batch_size, is_training=True)
     elif dataset == 'smallNORB':
         trX, trY, num_tr_batch, valX, valY, num_val_batch = load_smallNORB(batch_size, is_training=True)
+    elif dataset == 'gtsrb':
+        trX, trY, num_tr_batch, valX, valY, num_val_batch = load_gtsrb(batch_size, is_training=True)
     data_queues = tf.train.slice_input_producer([trX, trY])
     X, Y = tf.train.shuffle_batch(data_queues, num_threads=num_threads,
                                   batch_size=batch_size,

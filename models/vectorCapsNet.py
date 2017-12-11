@@ -64,7 +64,7 @@ class CapsNet(object):
         # return digitCaps: [batch_size, 10, 16, 1], activation: [batch_size, 10]
         with tf.variable_scope('DigitCaps_layer'):
             primaryCaps = tf.reshape(primaryCaps, shape=[cfg.batch_size, -1, 8, 1])
-            self.digitCaps, self.activation = capslayer.layers.fully_connected(primaryCaps, activation, num_outputs=10, out_caps_shape=[16, 1], routing_method='DynamicRouting')
+            self.digitCaps, self.activation = capslayer.layers.fully_connected(primaryCaps, activation, num_outputs=self.num_label, out_caps_shape=[16, 1], routing_method='DynamicRouting')
 
         # Decoder structure in Fig. 2
         # Reconstructe the MNIST images with 3 FC layers
@@ -74,7 +74,7 @@ class CapsNet(object):
             active_caps = tf.reshape(masked_caps, shape=(cfg.batch_size, -1))
             fc1 = tf.contrib.layers.fully_connected(active_caps, num_outputs=512)
             fc2 = tf.contrib.layers.fully_connected(fc1, num_outputs=1024)
-            self.decoded = tf.contrib.layers.fully_connected(fc2, num_outputs=784, activation_fn=tf.sigmoid)
+            self.decoded = tf.contrib.layers.fully_connected(fc2, num_outputs=6912, activation_fn=tf.sigmoid)
 
     def loss(self):
         # 1. Margin loss
@@ -84,7 +84,7 @@ class CapsNet(object):
         max_l = tf.square(tf.maximum(0., cfg.m_plus - self.activation))
         # max_r = max(0, ||v_c||-m_minus)^2
         max_r = tf.square(tf.maximum(0., self.activation - cfg.m_minus))
-        assert max_l.get_shape() == [cfg.batch_size, 10]
+        assert max_l.get_shape() == [cfg.batch_size, 43]
 
         # reshape: [batch_size, 10, 1, 1] => [batch_size, 10]
         max_l = tf.reshape(max_l, shape=(cfg.batch_size, -1))
@@ -116,7 +116,7 @@ class CapsNet(object):
         train_summary.append(tf.summary.scalar('train/margin_loss', self.margin_loss))
         train_summary.append(tf.summary.scalar('train/reconstruction_loss', self.reconstruction_err))
         train_summary.append(tf.summary.scalar('train/total_loss', self.loss))
-        recon_img = tf.reshape(self.decoded, shape=(cfg.batch_size, 28, 28, 1))
+        recon_img = tf.reshape(self.decoded, shape=(cfg.batch_size, 48, 48, 3))
         train_summary.append(tf.summary.image('reconstruction_img', recon_img))
         train_summary.append(tf.summary.histogram('activation', self.activation))
         self.train_summary = tf.summary.merge(train_summary)
